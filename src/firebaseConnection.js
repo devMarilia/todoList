@@ -1,4 +1,4 @@
-import faribase from 'firebase/app'
+import firebase from 'firebase/app'
 import 'firebase/database'
 
 let firebaseConfig = {
