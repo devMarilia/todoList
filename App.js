@@ -1,18 +1,50 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, FlatList} from 'react-native';
-import firebae from './src/firebaseConnection'
+import React, { useState, useEffect, Children } from 'react';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, FlatList, Keyboard} from 'react-native';
+import firebase from './src/firebaseConnection'
 import TaskList from './src/TaskList'
 
 console.disableYellowBox=true;
 
 export default function App() {
-  const [newTask, steNewTask] = useState('')
-  const[tasks, setTasks] = useState([
-    {key: '1', nome: 'Caminhar'},
-    {key: '2', nome: 'Praticar react-native com firebase'},
-    {key: '3', nome: 'Tomar cerveja'}
+  const [newTask, setNewTask] = useState('')
+  const[tasks, setTasks] = useState([])
 
-  ])
+
+  useEffect(() => {
+    async function loadTasks() { 
+    await firebase.database().ref('tarefas').on('value', (snapshot) => {
+      setTasks([])
+
+        snapshot.forEach((childItem) => {
+          let data = {
+            hey: childItem.key,
+            nome: childItem.val().nome
+          }
+          setTasks(oldArray => [...oldArray, data])
+        })
+     })
+   }
+
+   loadTasks()
+  }, [])
+
+
+  async function handleAdd(){
+    if(newTask !== '') {
+      let tarefas = await firebase.database().ref('tarefas')
+      let chave = tarefas.push().key;
+
+      tarefas.child(chave).set({
+        nome: newTask
+      })
+
+      Keyboard.dismiss()
+      setNewTask('')
+    }
+  }
+    
+
+
  return (
 <View style={styles.container}>
 
@@ -21,10 +53,10 @@ export default function App() {
     style={styles.input}
     placeholder='O que vai fazer hoje?'
     underlineColorAndroid="transparet"
-    onChangeText={ (texto) =>  steNewTask(texto)}
+    onChangeText={ (texto) =>  setNewTask(texto)}
     value={newTask}
     />
-    <TouchableOpacity style={styles.buttonAdd}>
+    <TouchableOpacity style={styles.buttonAdd} onPress={handleAdd}>
       <Text style={styles.buttonText}>+</Text>
     </TouchableOpacity>
   </View>
